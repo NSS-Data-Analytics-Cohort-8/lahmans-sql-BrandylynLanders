@@ -115,4 +115,33 @@ ORDER BY Decade;
 ---the trend we were asked to observe is the fact that they are ever increasing
 
 -- 6. Find the player who had the most success stealing bases in 2016, where __success__ is measured as the percentage of stolen base attempts which are successful. (A stolen base attempt results either in a stolen base or being caught stealing.) Consider only players who attempted _at least_ 20 stolen bases.
+---below with CAST-------------------------------------------------------------------------------------
+SELECT 
+  subquery.playerID, 
+  subquery.Stolen_Bases, 
+  subquery.Caught_Stealing, 
+  ROUND(CAST(subquery.Stolen_Bases AS NUMERIC)/CAST(subquery.Stolen_Bases+subquery.Caught_Stealing AS NUMERIC), 3) AS Success_Rate
+FROM (
+  SELECT 
+    playerID, 
+    SUM(SB) AS Stolen_Bases, 
+    SUM(CS) AS Caught_Stealing
+  FROM batting
+  WHERE yearID = 2016 AND SB+CS >= 20
+  GROUP BY playerID
+) AS subquery
+ORDER BY Success_Rate DESC
+LIMIT 5;  --"owingch01"	21	2	0.913--
+--below without CAST------------------------BIG DIFFERENCE---------------------------
+SELECT 
+  playerID, 
+  SUM(SB) AS Stolen_Bases, 
+  SUM(CS) AS Caught_Stealing, 
+  ROUND(SUM(SB)/NULLIF(SUM(SB+CS), 0), 3) AS Success_Rate
+FROM batting
+WHERE yearID = 2016 AND SB+CS >= 20
+GROUP BY playerID
+ORDER BY Success_Rate DESC
+LIMIT 5;
 
+-- 7.  From 1970 – 2016, what is the largest number of wins for a team that did not win the world series? What is the smallest number of wins for a team that did win the world series? Doing this will probably result in an unusually small number of wins for a world series champion – determine why this is the case. Then redo your query, excluding the problem year. How often from 1970 – 2016 was it the case that a team with the most wins also won the world series? What percentage of the time?
