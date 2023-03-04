@@ -203,15 +203,65 @@ FROM (
   WHERE yearID BETWEEN 1970 AND 2016 AND yearID != 1981 AND WSWin='Y'
   GROUP BY teamid
 ) AS champ_wins
-JOIN (
+INNER JOIN (
   SELECT MAX(W) AS max_wins
   FROM teams
   WHERE yearID BETWEEN 1970 AND 2016 AND yearID != 1981 AND WSWin='N'
 ) AS non_champ_wins
 ON champ_wins.max_wins = non_champ_wins.max_wins;
+
+SELECT MAX(w), yearid
+			FROM teams
+		   WHERE yearid BETWEEN 1970 AND 2016
+		   GROUP BY yearid
+		   ORDER BY yearid
+SELECT yearid,
+AVG(CASE WHEN cte AND wswin='Y' THEN 1
+   WHEN w=MAX(W)AND)
+   
+WITH champ_wins AS (
+  SELECT teamid, MAX(W) AS max_wins
+  FROM teams
+  WHERE yearID BETWEEN 1970 AND 2016 AND WSWin='Y'
+  GROUP BY teamid
+), non_champ_wins AS (
+  SELECT MAX(W) AS max_wins
+  FROM teams
+  WHERE yearID BETWEEN 1970 AND 2016 AND WSWin='N'
+)
+SELECT COUNT(*) AS num_champs, 
+  COUNT(*) * 100.0::NUMERIC / (SELECT COUNT(DISTINCT yearID) FROM teams WHERE yearID BETWEEN 1970 AND 2016 AND WSWin='Y') AS percentage
+FROM champ_wins
+JOIN non_champ_wins ON champ_wins.max_wins = non_champ_wins.max_wins;
 ---------------------------0-----------------------------------------------------------------------
+SELECT COUNT(*) * 100.0 / COUNT(*) OVER() AS percentage
+FROM (
+  SELECT yearID, teamID, W, WSWin,
+         MAX(W) OVER (PARTITION BY yearID) AS max_wins
+  FROM teams
+  WHERE yearID BETWEEN 1970 AND 2016
+) AS t
+WHERE WSWin = 'Y' AND W = max_wins;
+----------------partition attempt--------------------------------above----------
+WITH max_wins AS (
+  SELECT MAX(w) AS max_wins, yearid
+  FROM teams
+  WHERE yearid BETWEEN 1970 AND 2016
+  GROUP BY yearid
+)
+SELECT 
+  COUNT(*) AS num_champs, 
+  COUNT(*) * 100.0 / (SELECT COUNT(DISTINCT yearid) FROM teams WHERE yearid BETWEEN 1970 AND 2016) AS percentage
+FROM (
+  SELECT teams.teamid, teams.yearid
+  FROM teams
+  INNER JOIN max_wins
+  ON teams.yearid = max_wins.yearid AND teams.w = max_wins.max_wins
+  WHERE teams.wswin = 'Y'
+) AS champ_wins;
+
 -- 8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. 
-ELECT 
+SELECT 
   park AS park_name, 
   team AS team_name, 
   AVG(attendance/games) AS avg_attendance
@@ -256,3 +306,6 @@ ORDER BY People.nameLast, People.nameFirst;
 ----------not sure what to do about the duplicates here----------------------------------
 
 -- 10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
+
+
+
