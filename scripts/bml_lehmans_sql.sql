@@ -175,4 +175,41 @@ FROM teams
 WHERE yearID BETWEEN 1970 AND 2016 AND WSWin='Y'
 GROUP BY teamid, name
 ORDER BY min_wins ASC
+-IMIT 1;
+----------------below excludes the problem year of 1981--------------player strike--------------
+SELECT DISTINCT teamid,name, MAX(W) AS Max_Wins 
+FROM teams 
+WHERE yearID BETWEEN 1970 AND 2016 AND yearID != 1981 AND W < (SELECT MAX(W) FROM teams WHERE yearID BETWEEN 1970 AND 2016 AND WSWin='N' AND yearID != 1981)
+GROUP BY teamid, name
+ORDER BY max_wins DESC;
+
+SELECT DISTINCT teamid, name, MIN(W) AS MIN_Wins 
+FROM teams 
+WHERE yearID BETWEEN 1970 AND 2016 AND yearID != 1981 AND W < (SELECT MIN(W) FROM teams WHERE yearID BETWEEN 1970 AND 2016 AND WSWin='Y' AND yearID != 1981)
+GROUP BY teamid, name
+ORDER BY min_wins ASC;
+
+SELECT DISTINCT teamid, name, MIN(W) AS MIN_Wins 
+FROM teams 
+WHERE yearID BETWEEN 1970 AND 2016 AND yearID != 1981 AND WSWin='Y'
+GROUP BY teamid, name
+ORDER BY min_wins ASC
 LIMIT 1;
+-----determining how often from 1970-2016 the team with the most wins won the WS-----------------
+SELECT COUNT(*) AS num_champs
+FROM (
+  SELECT teamid, MAX(W) AS max_wins
+  FROM teams
+  WHERE yearID BETWEEN 1970 AND 2016 AND yearID != 1981 AND WSWin='Y'
+  GROUP BY teamid
+) AS champ_wins
+JOIN (
+  SELECT MAX(W) AS max_wins
+  FROM teams
+  WHERE yearID BETWEEN 1970 AND 2016 AND yearID != 1981 AND WSWin='N'
+) AS non_champ_wins
+ON champ_wins.max_wins = non_champ_wins.max_wins;
+---------------------------0-----------------------------------------------------------------------
+-- 8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. Repeat for the lowest 5 average attendance.
+
+
