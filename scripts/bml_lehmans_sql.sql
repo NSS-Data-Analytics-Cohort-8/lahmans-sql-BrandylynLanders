@@ -210,6 +210,49 @@ JOIN (
 ) AS non_champ_wins
 ON champ_wins.max_wins = non_champ_wins.max_wins;
 ---------------------------0-----------------------------------------------------------------------
--- 8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. Repeat for the lowest 5 average attendance.
+-- 8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. 
+ELECT 
+  park AS park_name, 
+  team AS team_name, 
+  AVG(attendance/games) AS avg_attendance
+FROM homegames
+WHERE year = 2016 AND games >= 10
+GROUP BY park, team
+ORDER BY avg_attendance DESC
+LIMIT 5;
 
+--Repeat for the lowest 5 average attendance.
+SELECT 
+  park AS park_name, 
+  team AS team_name, 
+  AVG(attendance/games) AS avg_attendance
+FROM homegames
+WHERE year = 2016 AND games >= 10
+GROUP BY park, team
+ORDER BY avg_attendance ASC
+LIMIT 5;
+------------------------------------------this seemed too easy-------possibly incorrect--------------
 
+-- 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
+SELECT*
+FROM awardsmanagers
+
+SELECT
+    People.nameFirst,
+    People.nameLast,
+    nl_managers.teamID AS nl_team,
+    al_managers.teamID AS al_team
+FROM
+    (SELECT DISTINCT playerID FROM AwardsManagers WHERE awardID = 'TSN Manager of the Year' AND lgID = 'NL') AS nl
+    INNER JOIN AwardsManagers nl_awards ON nl.playerID = nl_awards.playerID AND nl_awards.lgID = 'NL'
+    INNER JOIN Managers nl_managers ON nl.playerID = nl_managers.playerID AND nl_awards.yearID = nl_managers.yearID
+    INNER JOIN
+    (SELECT DISTINCT playerID FROM AwardsManagers WHERE awardID = 'TSN Manager of the Year' AND lgID = 'AL') AS al
+    INNER JOIN AwardsManagers al_awards ON al.playerID = al_awards.playerID AND al_awards.lgID = 'AL'
+    INNER JOIN Managers al_managers ON al.playerID = al_managers.playerID AND al_awards.yearID = al_managers.yearID
+    ON nl.playerID = al.playerID
+    INNER JOIN People ON nl.playerID = People.playerID
+ORDER BY People.nameLast, People.nameFirst;
+----------not sure what to do about the duplicates here----------------------------------
+
+-- 10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
