@@ -359,7 +359,60 @@ SELECT
 	WHERE  awardid LIKE 'TSN Manager of the Year' 
 	ORDER BY playerid, lgid;
 
+	SELECT a.playerid, COUNT(DISTINCT a.lgid), b.yearid
+		FROM awardsmanagers AS a
+		LEFT JOIN awardsmanagers as b
+		USING (playerid)
+		WHERE a.awardid = 'TSN Manager of the Year'
+			AND a.lgid <> 'ML'
+		GROUP BY a.playerid, b.yearid
+		HAVING COUNT(DISTINCT a.lgid)>=2
+	
 -- 10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
 
+--how many homeruns were in 2016--
+SELECT SUM(HR) AS total_home_runs
+FROM Batting
+WHERE yearID = 2016;
+-----------------------------------------------------------------5610-----------------------------
+SELECT 
+  playerID, 
+  MAX(HR) AS career_high_hr
+FROM 
+  Batting
+WHERE 
+  HR > 0 
+GROUP BY 
+  playerID
+HAVING 
+  COUNT(DISTINCT yearID) >= 10;
+-----second query--------------to establish 2016 homeruns------------------------------------------
+SELECT DISTINCT playerID
+FROM batting
+WHERE yearID = 2016 AND HR > 0;
 
-
+SELECT 
+  b.playerID, 
+  MAX(b.HR) AS career_high_hr --find career high homeruns--
+FROM 
+  Batting b
+WHERE 
+  b.HR > 0 
+GROUP BY 
+  b.playerID
+HAVING 
+  COUNT(DISTINCT b.yearID) >= 10
+  AND MAX(b.HR) = (
+    SELECT MAX(HR) 
+    FROM Batting 
+    WHERE playerID = b.playerID
+    AND HR > 0
+    AND yearID = 2016
+  )
+  AND b.playerID IN (
+    SELECT playerID
+    FROM Batting
+    WHERE yearID = 2016 AND HR > 0
+  )
+ORDER BY 
+  b.playerID;
