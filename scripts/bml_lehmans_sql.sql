@@ -283,41 +283,81 @@ GROUP BY park, team
 ORDER BY avg_attendance ASC
 LIMIT 5;
 ------------------------------------------this seemed too easy-------possibly incorrect--------------
+SELECT 
+  p.park_name AS park_name,
+  t.name AS team_name,
+  AVG(h.attendance / h.games) AS avg_attendance
+FROM homegames h
+JOIN parks p ON h.park = p.park
+JOIN teams t ON h.team = t.teamid
+WHERE h.year = 2016 AND h.games >= 10
+GROUP BY p.park_name, t.name
+ORDER BY avg_attendance DESC
+LIMIT 5;
+---------------corrected number eight to show actual names instead of ID numbers-------------------
+
 
 -- 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
 SELECT*
 FROM awardsmanagers
 
-SELECT
-    People.nameFirst,
-    People.nameLast,
-    nl_managers.teamID AS nl_team,
-    al_managers.teamID AS al_team
-FROM
-    (SELECT DISTINCT playerID FROM AwardsManagers WHERE awardID = 'TSN Manager of the Year' AND lgID = 'NL') AS nl
-    INNER JOIN AwardsManagers nl_awards ON nl.playerID = nl_awards.playerID AND nl_awards.lgID = 'NL'
-    INNER JOIN Managers nl_managers ON nl.playerID = nl_managers.playerID AND nl_awards.yearID = nl_managers.yearID
-    INNER JOIN
-    (SELECT DISTINCT playerID FROM AwardsManagers WHERE awardID = 'TSN Manager of the Year' AND lgID = 'AL') AS al
-    INNER JOIN AwardsManagers al_awards ON al.playerID = al_awards.playerID AND al_awards.lgID = 'AL'
-    INNER JOIN Managers al_managers ON al.playerID = al_managers.playerID AND al_awards.yearID = 	al_managers.yearID
-    ON nl.playerID = al.playerID
-    INNER JOIN People ON nl.playerID = People.playerID
-	ORDER BY People.nameLast, People.nameFirst;  
+SELECT 
+  p.nameFirst, 
+  p.nameLast, 
+  nl_managers.teamID AS nl_team, 
+  al_managers.teamID AS al_team
+FROM 
+  (SELECT DISTINCT playerID FROM AwardsManagers WHERE awardID = 'TSN Manager of the Year' AND lgID = 'NL') AS nl
+  INNER JOIN AwardsManagers nl_awards ON nl.playerID = nl_awards.playerID AND nl_awards.lgID = 'NL'
+  INNER JOIN Managers nl_managers ON nl.playerID = nl_managers.playerID AND nl_awards.yearID = nl_managers.yearID
+  INNER JOIN
+  (SELECT DISTINCT playerID FROM AwardsManagers WHERE awardID = 'TSN Manager of the Year' AND lgID = 'AL') AS al
+  INNER JOIN AwardsManagers al_awards ON al.playerID = al_awards.playerID AND al_awards.lgID = 'AL'
+  INNER JOIN Managers al_managers ON al.playerID = al_managers.playerID AND al_awards.yearID = al_managers.yearID
+  ON nl.playerID = al.playerID
+  INNER JOIN People p ON nl.playerID = p.playerID
+ORDER BY p.nameLast, p.nameFirst;
 ----------not sure what to do about the duplicates here-----these should not duplicate---
 
-SELECT p.namefirst, p.namelast , m.yearid, m.teamid
-FROM 
-	(SELECT playerid, COUNT(DISTINCT lgid)
-		FROM awardsmanagers AS a
-		WHERE awardid = 'TSN Manager of the Year'
-		AND lgid <> 'ML'
-		GROUP BY playerid
-		HAVING COUNT(DISTINCT lgid) >=2) AS manager
-LEFT JOIN people as p
-USING(playerid)
-LEFT JOIN managers as m 
-USING(playerid)
+SELECT p.nameFirst, p.nameLast, m1.teamID AS nl_team, m2.teamID AS al_team
+FROM AwardsManagers AS am1
+JOIN Managers AS m1 ON am1.playerID = m1.playerID AND am1.yearID = m1.yearID AND am1.lgID = 'NL'
+JOIN AwardsManagers AS am2 ON am1.playerID = am2.playerID AND am1.yearID = am2.yearID AND am2.lgID = 'AL'
+JOIN Managers AS m2 ON am2.playerID = m2.playerID AND am2.yearID = m2.yearID
+JOIN People AS p ON am1.playerID = p.playerID
+WHERE am1.awardID = 'TSN Manager of the Year'
+ORDER BY p.nameLast, p.nameFirst;
+
+WITH CTE1 AS (
+  SELECT playerID, COUNT(DISTINCT yearID) AS num_wins
+  FROM AwardsManagers
+  WHERE awardID = 'TSN Manager of the Year' AND lgID IN ('NL', 'AL')
+  GROUP BY playerID
+  HAVING COUNT(DISTINCT yearID) > 1
+)
+SELECT p.nameFirst, p.nameLast, CTE1.lgID, m.teamID, CTE1.yearID
+FROM CTE1
+JOIN Managers m ON CTE1.playerID = m.playerID AND CTE1.yearID = m.yearID AND CTE1.lgID = m.lgID
+JOIN People p ON CTE1.playerID = p.playerID
+GROUP BY p.nameFirst, p.nameLast, CTE1.lgID, m.teamID, CTE1.yearID
+ORDER BY p.nameLast, p.nameFirst;
+
+---CTE--which shows 
+WITH CTE1 AS (
+  SELECT playerID, COUNT(DISTINCT yearID) AS num_wins
+  FROM AwardsManagers
+  WHERE awardID = 'TSN Manager of the Year' AND lgID IN ('NL', 'AL')
+  GROUP BY playerID
+  HAVING COUNT(DISTINCT yearID) > 1
+	
+SELECT 
+	playerid,
+	awardid,
+	yearid, 
+	lgid
+	FROM awardsmanagers
+	WHERE  awardid LIKE 'TSN Manager of the Year' 
+	ORDER BY playerid, lgid;
 
 -- 10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
 
