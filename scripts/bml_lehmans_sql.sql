@@ -18,7 +18,7 @@ FROM people p
 INNER JOIN appearances a ON p.playerid = a.playerid
 WHERE p.height = (SELECT MIN(height) FROM people)
 GROUP BY p.namegiven, p.height, a.teamid;
---"Edward Carl"	43	"SLA"	1----------------------------------------------------------------------------
+--"Edward Carl"	43	"SLA"	1----------------------------
 
 --3.Find all players in the database who played at Vanderbilt University. Create a list showing each player’s first and last names as well as the total salary they earned in the major leagues. Sort this list in descending order by the total salary earned. Which Vanderbilt player earned the most money in the majors?
 SELECT playerid, SUM(salary)
@@ -31,18 +31,18 @@ FROM people AS p
 INNER JOIN collegeplaying AS c
 ON 	p.playerid=c.playerid
 WHERE schoolid LIKE '%vandy%'
---tested a standard query and a subquery and then joined them below---------------
+--tested a standard query and a subquery and then joined them below------------
 SELECT DISTINCT p.playerid,p.namefirst, p.namelast, subquery.total_salary
 FROM people AS p
 INNER JOIN collegeplaying AS c ON p.playerid = c.playerid
-INNER JOIN (
-  SELECT playerid, SUM(salary) AS total_salary
-  FROM salaries
-  GROUP BY playerid
-) AS subquery ON p.playerid = subquery.playerid
+INNER JOIN(
+		SELECT playerid, SUM(salary) AS total_salary
+  		FROM salaries
+  		GROUP BY playerid
+		) AS subquery ON p.playerid = subquery.playerid
 WHERE c.schoolid LIKE '%vandy%'
 ORDER BY subquery.total_salary DESC;
-------David Price @ 81,851,296------------------------------------------------------
+------David Price @ 81,851,296------------------------------------------------
 
 SELECT DISTINCT p.playerid, p.namefirst, p.namelast, SUM(s.salary) AS total_salary
 FROM people AS p
@@ -62,7 +62,8 @@ SUM(PO) AS Total_Putouts
 FROM fielding 
 WHERE yearID = 2016
 GROUP BY Position_Group;
----------------run query for answer----------------------------------------------------
+---------------run query for answer---------------------------------------------
+
 -- 5. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. 
 SELECT 
   CONCAT(CAST((yearID/10)*10 AS CHAR(4)), '-', CAST((yearID/10)*10+9 AS CHAR(4))) AS Decade, 
@@ -115,7 +116,7 @@ ORDER BY Decade;
 ---the trend we were asked to observe is the fact that they are ever increasing
 
 -- 6. Find the player who had the most success stealing bases in 2016, where __success__ is measured as the percentage of stolen base attempts which are successful. (A stolen base attempt results either in a stolen base or being caught stealing.) Consider only players who attempted _at least_ 20 stolen bases.
----below with CAST-------------------------------------------------------------------------------------
+---below with CAST--------------------------------------------------------------
 SELECT 
   subquery.playerID, 
   subquery.Stolen_Bases, 
@@ -243,12 +244,12 @@ FROM (
 ) AS t
 WHERE WSWin = 'Y' AND W = max_wins;
 ----------------partition attempt--------------------------------above----------
-WITH max_wins AS (
+WITH max_wins AS(
   SELECT MAX(w) AS max_wins, yearid
   FROM teams
   WHERE yearid BETWEEN 1970 AND 2016
   GROUP BY yearid  
-)--create a CTE to show the team with the max wins--this runs first
+)--create a CTE to show the number of wins for the team with the max wins--this runs first 
 SELECT 
   COUNT(*) AS num_champs, --calculates the number of championship wins for the team with the most wins by using a row count
   COUNT(*) * 100.0 / (SELECT COUNT(DISTINCT yearid) FROM teams WHERE yearid BETWEEN 1970 AND 2016) AS percentage---calculate the percentage of championship wins for the teams with the most wins and then divdes the # of championship wins by the total number of years--this runs last 
@@ -259,7 +260,25 @@ FROM (
   ON teams.yearid = max_wins.yearid AND teams.w = max_wins.max_wins
   WHERE teams.wswin = 'Y'
 ) AS champ_wins;--this runs second and creates a wins the worldseries section----
-
+---------this is Jordan's query to number 7---------------------
+WITH cte as (SELECT name, yearid, w, WSwin
+FROM teams
+	WHERE w IN (SELECT MAX(w) OVER (PARTITION BY yearid) as w
+	FROM teams as sub
+	WHERE (yearid BETWEEN '1970' AND '1980' 
+	OR yearid BETWEEN '1982' AND '2016')
+	AND teams.yearid = sub.yearid))
+			
+SELECT
+	COUNT(*) as best_team_ws,
+	CONCAT(ROUND((100 * COUNT(*)::float / (SELECT COUNT( DISTINCT yearid)
+	FROM teams
+	WHERE (yearid <> '1994' AND yearid BETWEEN '1970' AND '1980'
+	OR yearid BETWEEN '1982' AND '2016'))::float)::numeric, 1),'%')
+	as pct_ws_highest_w
+FROM cte
+WHERE wswin = 'Y'
+--------------------------------------------------end-------------------------
 -- 8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. 
 SELECT 
   park AS park_name, 
@@ -294,7 +313,7 @@ WHERE h.year = 2016 AND h.games >= 10
 GROUP BY p.park_name, t.name
 ORDER BY avg_attendance DESC
 LIMIT 5;
----------------corrected number eight to show actual names instead of ID numbers-------------------
+--------corrected number eight to show actual names instead of ID numbers-------------------
 
 
 -- 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
